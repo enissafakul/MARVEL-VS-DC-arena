@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARVEL vs DC ARENA v2.0</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --accent-color: #f39c12;
+            --p1-color: #e74c3c;
+            --p2-color: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 2px solid var(--accent-color);
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .menu-btn {
+            background: transparent;
+            color: var(--text-color);
+            border: 2px solid var(--text-color);
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .menu-btn:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .grid-select {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .char-card {
+            background: #2a2a2a;
+            border: 2px solid #444;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .char-card:hover {
+            border-color: var(--accent-color);
+            background: #333;
+        }
+
+        .char-card.selected-p1 { border-color: var(--p1-color); background: rgba(231, 76, 60, 0.2); }
+        .char-card.selected-p2 { border-color: var(--p2-color); background: rgba(52, 152, 219, 0.2); }
+
+        .arena {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+        }
+
+        .fighter-box {
+            width: 45%;
+            padding: 15px;
+            background: #252525;
+            border-radius: 8px;
+        }
+
+        .hp-bar-container {
+            background: #444;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .hp-bar {
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .p1-hp { background: var(--p1-color); }
+        .p2-hp { background: var(--p2-color); }
+
+        .ascii-art {
+            font-family: monospace;
+            white-space: pre;
+            font-size: 1.2rem;
+            margin: 20px 0;
+            background: #111;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .norm-btn { background: #f1c40f; color: black; }
+        .sup-btn { background: #e67e22; color: white; }
+        .heal-btn { background: #2ecc71; color: white; }
+
+        .log-box {
+            background: #000;
+            color: #2ecc71;
+            padding: 15px;
+            height: 120px;
+            overflow-y: auto;
+            text-align: left;
+            font-family: monospace;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>Marvel vs DC Arena</h1>
+
+    <div id="menu-screen" class="screen active">
+        <button class="menu-btn" onclick="startMode(1)">1. Oyuncu vs Oyuncu</button><br>
+        <button class="menu-btn" onclick="startMode(2)">2. Oyuncu vs Yapay Zeka</button><br>
+        <button class="menu-btn" onclick="startMode(3)">3. Turnuva Modu (8 Oyuncu)</button>
+    </div>
+
+    <div id="select-screen" class="screen">
+        <h2 id="select-title">Karakter Seçin</h2>
+        <div class="grid-select" id="char-grid"></div>
+    </div>
+
+    <div id="battle-screen" class="screen">
+        <h3 id="round-title">TUR 1</h3>
+        <div class="arena">
+            <div class="fighter-box" id="p1-box">
+                <h2 style="color: var(--p1-color);" id="p1-name">P1</h2>
+                <div class="hp-bar-container">
+                    <div id="p1-bar" class="hp-bar p1-hp"></div>
+                </div>
+                <div id="p1-hp-text">100/100 HP</div>
+                <div id="p1-ascii" class="ascii-art"></div>
+            </div>
+            <div><h2>VS</h2></div>
+            <div class="fighter-box" id="p2-box">
+                <h2 style="color: var(--p2-color);" id="p2-name">P2</h2>
+                <div class="hp-bar-container">
+                    <div id="p2-bar" class="hp-bar p2-hp"></div>
+                </div>
+                <div id="p2-hp-text">100/100 HP</div>
+                <div id="p2-ascii" class="ascii-art"></div>
+            </div>
+        </div>
+
+        <div class="controls" id="player-controls">
+            <h4 id="turn-indicator">Sıra: Oyuncu 1</h4>
+            <button class="action-btn norm-btn" id="btn-normal" onclick="playTurn('normal')">Normal Saldırı</button>
+            <button class="action-btn sup-btn" id="btn-super" onclick="playTurn('super')">Süper Yetenek</button>
+            <button class="action-btn heal-btn" id="btn-heal" onclick="playTurn('heal')">Can İksiri</button>
+        </div>
+
+        <div class="log-box" id="battle-log"></div>
+    </div>
+</div>
+
+<script>
+    // Karakter Veritabanı
+    const karakterHavuzu = [
+        {isim: "Spider-Man", hp_max: 120, hp: 120, saldiri: 25, savunma: 10, super_isim: "Web Blast!", super_bonus: 15, ascii: " /\\_/\\ \n (o.o)\n > ^ <", super_kullanildi: false},
+        {isim: "Iron Man", hp_max: 100, hp: 100, saldiri: 30, savunma: 15, super_isim: "Repulsor Beam!", super_bonus: 20, ascii: " [===]\n (o o)\n |===|", super_kullanildi: false},
+        {isim: "Wolverine", hp_max: 150, hp: 150, saldiri: 20, savunma: 20, super_isim: "Claw Fury!", super_bonus: 12, ascii: " /_\\_/\n (o.o)\n /| |\\", super_kullanildi: false},
+        {isim: "Captain America", hp_max: 130, hp: 130, saldiri: 22, savunma: 12, super_isim: "Shield Bash!", super_bonus: 14, ascii: " [===]\n (o o)\n |===|", super_kullanildi: false},
+        {isim: "Thor", hp_max: 140, hp: 140, saldiri: 28, savunma: 8, super_isim: "Lightning Strike!", super_bonus: 30, ascii: " /_\\_/\n (O O)\n |===|", super_kullanildi: false},
+        {isim: "Hulk", hp_max: 200, hp: 200, saldiri: 35, savunma: 5, super_isim: "SMASH!", super_bonus: 50, ascii: " /~_~\\\n (O O)\n |===|", super_kullanildi: false},
+        {isim: "Batman", hp_max: 140, hp: 140, saldiri: 24, savunma: 20, super_isim: "Batarang Storm!", super_bonus: 25, ascii: " /_\\_/\n (o o)\n |===|", super_kullanildi: false},
+        {isim: "Superman", hp_max: 250, hp: 250, saldiri: 40, savunma: 30, super_isim: "Heat Vision!", super_bonus: 45, ascii: " /_\\_/\n (O O)\n |===|", super_kullanildi: false}
+    ];
+
+    let gameMode = 1;
+    let p1 = null, p2 = null;
+    let activePlayer = 1;
+    let round = 1;
+    let tournamentBracket = [];
+    let tournamentStep = 0;
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function startMode(mode) {
+        gameMode = mode;
+        p1 = null; p2 = null;
+        tournamentBracket = [];
+        buildSelectScreen();
+        showScreen('select-screen');
+    }
+
+    function buildSelectScreen() {
+        const grid = document.getElementById('char-grid');
+        grid.innerHTML = '';
+        const title = document.getElementById('select-title');
+        
+        if(gameMode === 3) {
+            title.innerText = `Turnuva İçin Karakter Seçin (${tournamentBracket.length + 1}/8)`;
+        } else {
+            title.innerText = !p1 ? "Oyuncu 1 Karakter Seçimi" : "Oyuncu 2 Karakter Seçimi (veya AI)";
+        }
+
+        karakterHavuzu.forEach((char, index) => {
+            const card = document.createElement('div');
+            card.className = 'char-card';
+            card.innerHTML = `<strong>${char.isim}</strong><br>HP: ${char.hp_max} | ATK: ${char.saldiri} | DEF: ${char.savunma}`;
+            card.onclick = () => selectCharacter(index);
+            grid.appendChild(card);
+        });
+    }
+
+    function selectCharacter(index) {
+        let selectedChar = JSON.parse(JSON.stringify(karakterHavuzu[index])); // Deep copy
+
+        if (gameMode === 3) { // Turnuva Modu
+            tournamentBracket.push(selectedChar);
+            if(tournamentBracket.length < 8) {
+                buildSelectScreen();
+            } else {
+                startTournamentMatch();
+            }
+        } else { // Tekli veya AI Modu
+            if (!p1) {
+                p1 = selectedChar;
+                if(gameMode === 2) { // AI Modu ise P2'yi rastgele seç
+                    let aiIndex = Math.floor(Math.random() * karakterHavuzu.length);
+                    p2 = JSON.parse(JSON.stringify(karakterHavuzu[aiIndex]));
+                    initBattle();
+                } else {
+                    buildSelectScreen();
+                }
+            } else {
+                p2 = selectedChar;
+                initBattle();
+            }
+        }
+    }
+
+    function startTournamentMatch() {
+        p1 = tournamentBracket[tournamentStep];
+        p2 = tournamentBracket[tournamentStep + 1];
+        logMessage(`--- Turnuva Maçı: ${p1.isim} vs ${p2.isim} ---`);
+        initBattle();
+    }
+
+    function initBattle() {
+        p1.hp = p1.hp_max; p1.super_kullanildi = false;
+        p2.hp = p2.hp_max; p2.super_kullanildi = false;
+        round = 1;
+        activePlayer = 1;
+        
+        document.getElementById('p1-name').innerText = p1.isim;
+        document.getElementById('p2-name').innerText = p2.isim;
+        document.getElementById('p1-ascii').innerText = p1.ascii;
+        document.getElementById('p2-ascii').innerText = p2.ascii;
+        
+        document.getElementById('battle-log').innerHTML = 'Savaş başladı!<br>';
+        updateUI();
+        showScreen('battle-screen');
+    }
+
+    function updateUI() {
+        document.getElementById('round-title').innerText = `TUR ${round}`;
+        
+        // Can barları kontrolü
+        const p1Pct = Math.max(0, (p1.hp / p1.hp_max) * 100);
+        const p2Pct = Math.max(0, (p2.hp / p2.hp_max) * 100);
+        document.getElementById('p1-bar').style.width = p1Pct + '%';
+        document.getElementById('p2-bar').style.width = p2Pct + '%';
+        
+        document.getElementById('p1-hp-text').innerText = `${p1.hp}/${p1.hp_max} HP`;
+        document.getElementById('p2-hp-text').innerText = `${p2.hp}/${p2.hp_max} HP`;
+
+        // Butonların aktiflik durumları (Her 3 turda bir Heal)
+        document.getElementById('btn-heal').disabled = (round % 3 !== 0);
+        
+        if (activePlayer === 1) {
+            document.getElementById('turn-indicator').innerText = `Sıra: ${p1.isim} (P1)`;
+            document.getElementById('btn-super').disabled = p1.super_kullanildi;
+        } else {
+            document.getElementById('turn-indicator').innerText = `Sıra: ${p2.isim} (P2)`;
+            document.getElementById('btn-super').disabled = p2.super_kullanildi;
+        }
+    }
+
+    function logMessage(msg) {
+        const logBox = document.getElementById('battle-log');
+        logBox.innerHTML += msg + '<br>';
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function playTurn(action) {
+        let attacker = activePlayer === 1 ? p1 : p2;
+        let defender = activePlayer === 1 ? p2 : p1;
+
+        if (action === 'normal') {
+            let dmg = Math.max(5, attacker.saldiri - defender.savunma);
+            defender.hp -= dmg;
+            logMessage(`💥 ${attacker.isim} normal vuruş yaptı! ${defender.isim} ${dmg} hasar aldı.`);
+        } 
+        else if (action === 'super') {
+            let dmg = Math.max(5, (attacker.saldiri + attacker.super_bonus) - defender.savunma);
+            defender.hp -= dmg;
+            attacker.super_kullanildi = true;
+            logMessage(`🔥 ${attacker.isim} ÖZEL YETENEK KULLANDI: [${attacker.super_isim}]! ${defender.isim} ${dmg} hasar aldı.`);
+        } 
+        else if (action === 'heal') {
+            let heal = Math.floor(attacker.hp_max * 0.3);
+            attacker.hp = Math.min(attacker.hp_max, attacker.hp + heal);
+            logMessage(`💚 ${attacker.isim} iyileşme iksiri içti! +${heal} HP.`);
+        }
+
+        if (defender.hp <= 0) {
+            defender.hp = 0;
+            updateUI();
+            endBattle(attacker);
+            return;
+        }
+
+        // Sıra Değiştirme
+        if (gameMode === 2 && activePlayer === 1) {
+            // Yapay zeka modu ise oyuncudan hemen sonra AI oynasın
+            activePlayer = 2;
+            updateUI();
+            setTimeout(aiTurn, 1000); // 1 saniye bekleme efekti
+        } else {
+            activePlayer = activePlayer === 1 ? 2 : 1;
+            if (activePlayer === 1) round++;
+            updateUI();
+        }
+    }
+
+    // Kodundaki Akıllı Yapay Zeka Mantığı
+    function aiTurn() {
+        let superHasar = Math.max(5, (p2.saldiri + p2.super_bonus) - p1.savunma);
+        
+        if (round % 3 === 0 && p2.hp < p2.hp_max * 0.4) {
+            playTurn('heal');
+        } else if (!p2.super_kullanildi && p1.hp <= superHasar) {
+            playTurn('super');
+        } else if (!p2.super_kullanildi && Math.random() < 0.3) {
+            playTurn('super');
+        } else {
+            playTurn('normal');
+        }
+
+        if (p1.hp > 0) {
+            activePlayer = 1;
+            round++;
+            updateUI();
+        }
+    }
+
+    function endBattle(winner) {
+        alert(`🏆 Maçın Kazananı: ${winner.isim}!`);
+        
+        if (gameMode === 3) { // Turnuva Modu İlerlemesi
+            tournamentBracket[tournamentStep] = winner; // Kazanan üst tura çıkar
+            tournamentBracket.splice(tournamentStep + 1, 1); // Eleneni diziden sil
+            
+            if (tournamentBracket.length === 1) {
+                logMessage(`🏆🏆🏆 TURNUVA ŞAMPİYONU: ${tournamentBracket[0].isim} 🏆🏆🏆`);
+                alert(`🏆 TURNUVA ŞAMPİYONU: ${tournamentBracket[0].isim} 🏆`);
+                showScreen('menu-screen');
+            } else {
+                tournamentStep++;
+                if (tournamentStep >= tournamentBracket.length) {
+                    tournamentStep = 0; // Tur bitti, bir üst tur maçlarına başla
+                }
+                startTournamentMatch();
+            }
+        } else {
+            showScreen('menu-screen');
+        }
+    }
+</script>
+</body>
+</html>
