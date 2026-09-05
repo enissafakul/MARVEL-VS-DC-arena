@@ -1,0 +1,581 @@
+<!DOCTYPE html><html lang="tr"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Clash Arena v9.1 - Responsive FX Edition</title>
+    <style>
+        :root {
+            --bg-color: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --accent: #00f0ff;
+            --p1-color: #ff0055;
+            --p2-color: #38bdf8;
+            --neon-glow: 0 0 30px rgba(0, 240, 255, 0.25);
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #02040a radial-gradient(circle at 50% 30%, #060b19 0%, #020617 100%);
+            color: #f8fafc;
+            margin: 0;
+            padding: 10px;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .app-window {
+            width: 100%;
+            max-width: 1050px;
+            height: 95vh;
+            height: 95dvh;
+            background: var(--panel-bg);
+            border-radius: 24px;
+            border: 2px solid rgba(0, 240, 255, 0.2);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.85), var(--neon-glow);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shake-light { animation: shake-kf 0.2s ease-in-out; }
+        .shake-heavy { animation: shake-kf 0.4s cubic-bezier(.36,.07,.19,.97) both; transform: translate3d(0, 0, 0); }
+        
+        @keyframes shake-kf {
+            10%, 90% { transform: translate3d(-2px, 1px, 0); }
+            20%, 80% { transform: translate3d(3px, -2px, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 3px, 0); }
+            40%, 60% { transform: translate3d(5px, -3px, 0); }
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff 30%, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            text-shadow: 0 0 20px rgba(0,240,255,0.2);
+            text-align: center;
+        }
+
+        .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; height: 100%; }
+        .screen.active { display: flex; }
+
+        .btn {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+            margin-top: 10px;
+        }
+        .char-card {
+            background: rgba(7, 11, 22, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .char-card:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(15, 23, 42, 0.8); }
+        .universe-badge { font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; letter-spacing: 1px; }
+        .mvl { background: #e21b22; }
+        .dcc { background: #004b87; }
+
+        .arena-hud { display: flex; justify-content: space-between; gap: 15px; margin: 10px 0; }
+        .fighter-panel {
+            width: 49%; background: rgba(6, 9, 17, 0.8); border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 16px; padding: 12px; position: relative;
+        }
+        .flash-hit-p1 { animation: flash-p1-kf 0.4s ease-out; }
+        .flash-hit-p2 { animation: flash-p2-kf 0.4s ease-out; }
+        @keyframes flash-p1-kf { 50% { border-color: var(--p1-color); box-shadow: 0 0 25px rgba(255,0,85,0.5); } }
+        @keyframes flash-p2-kf { 50% { border-color: var(--p2-color); box-shadow: 0 0 25px rgba(56,189,248,0.5); } }
+
+        .bar-container { background: #090d16; height: 20px; border-radius: 10px; overflow: hidden; margin: 6px 0; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+        .bar-ghost { position: absolute; top:0; left:0; height:100%; background: #fff; opacity: 0.3; transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; }
+        .bar-fill { position: absolute; top:0; left:0; height: 100%; width: 100%; transition: width 0.2s ease-out; }
+        .p1-fill { background: linear-gradient(90deg, #b91c1c, var(--p1-color)); }
+        .p2-fill { background: linear-gradient(90deg, #0369a1, var(--p2-color)); }
+        .shield-fill { position: absolute; top:0; right:0; height:100%; background: #eab308; opacity: 0.8; transition: width 0.3s; }
+
+        .battle-main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: rgba(30, 41, 59, 0.1);
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.02);
+            overflow: hidden;
+        }
+
+        .matrix-grid { display: grid; grid-template-columns: repeat(3, 85px); grid-template-rows: repeat(3, 85px); gap: 10px; justify-content: center; margin: auto; position: relative; }
+        .matrix-cell {
+            background: rgba(30, 41, 59, 0.25); border: 2px solid #1e293b; border-radius: 14px;
+            cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-size: 0.85rem; font-weight: 800; transition: all 0.2s; color: #64748b; position: relative; overflow: hidden;
+            text-align: center; line-height: 1.2;
+        }
+        .matrix-cell:hover { border-color: var(--accent); background: rgba(0, 240, 255, 0.08); color: #fff; }
+
+        #fx-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        .cell-flash { animation: cell-white-flash 0.3s ease-out; }
+        @keyframes cell-white-flash { 0% { background: #fff; } }
+
+        .console-log {
+            background: #020617; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
+            padding: 10px; height: 90px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; text-align: left;
+        }
+        .log-row { margin-bottom: 4px; padding: 2px 6px; border-left: 3px solid #64748b; }
+        .log-p1 { border-color: var(--p1-color); color: #fca5a5; }
+        .log-p2 { border-color: var(--p2-color); color: #7dd3fc; }
+        .log-sys { border-color: var(--accent); color: #22d3ee; }
+        .log-clash { border-color: #eab308; color: #fef08a; font-weight: bold; }
+
+        .buff-badge { display: inline-block; font-size: 0.7rem; background: #334155; padding: 1px 5px; border-radius: 4px; margin: 1px; }
+        .pass-overlay, .end-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.96); border-radius: 24px; z-index: 100; display: flex; justify-content: center; align-items: center;
+        }
+    </style></head><body><div class="app-window" id="app">
+    <header>
+        <h1>Cosmic Clash Arena</h1>
+        <div style="font-size: 0.75rem; color: #64748b; letter-spacing: 2px; text-align: center;">V9.1 SCREEN OPTIMIZED</div>
+    </header>
+
+    <div id="scr-menu" class="screen active" style="justify-content: center; align-items: center; gap: 15px;">
+        <button class="btn" style="width: 320px;" onclick="initMode(1)">👥 CO-OP LOCAL DÜELLO</button>
+        <button class="btn" style="width: 320px;" onclick="initMode(2)">🤖 ADVANCED AI CHALLENGE</button>
+    </div>
+
+    <div id="scr-select" class="screen">
+        <h3 id="select-banner" style="color: var(--accent); margin: 10px 0 5px 0;">Oyuncu 1 Kahraman Seçiyor</h3>
+        <div class="char-grid" id="selection-container"></div>
+    </div>
+
+    <div id="scr-pass" class="pass-overlay" style="display: none;">
+        <div style="background: #090d16; padding: 30px; border-radius: 20px; border: 2px dashed var(--accent); text-align: center; max-width: 400px;">
+            <h2 id="pass-player" style="color: var(--accent); margin: 0;">-</h2>
+            <p style="color: #94a3b8; margin: 10px 0 20px 0; font-size: 0.9rem;">Sıradaki oyuncunun hamleyi görmemesi için ekran perdelendi.</p>
+            <button class="btn" onclick="revealTurn()">KİLİDİ AÇ</button>
+        </div>
+    </div>
+
+    <div id="scr-end" class="end-overlay" style="display: none;">
+        <div style="text-align: center; background: rgba(15, 23, 42, 0.95); padding: 40px; border-radius: 24px; border: 2px solid var(--accent); box-shadow: 0 0 50px rgba(0,240,255,0.3);">
+            <h2 style="font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: 2px;">MAÇ SONU</h2>
+            <p id="end-winner-text" style="font-size: 1.4rem; color: var(--accent); font-weight: bold; margin: 0 0 25px 0;">-</p>
+            <button class="btn" onclick="viewScreen('scr-menu')">TEKRAR OYNA</button>
+        </div>
+    </div>
+
+    <div id="scr-battle" class="screen">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+            <div id="battle-round" style="font-weight: 900; letter-spacing: 2px; color: var(--accent); font-size: 0.95rem;">ROUND 1</div>
+            <div id="turn-indicator" style="font-size:0.85rem; color:#cbd5e1;">Sıra: -</div>
+        </div>
+
+        <div class="arena-hud">
+            <div class="fighter-panel" id="p1-panel">
+                <span class="universe-badge mvl" id="p1-univ">MARVEL</span>
+                <h4 style="margin: 2px 0; font-size: 1.2rem; color: var(--p1-color);" id="p1-title">P1 HERO</h4>
+                <div class="bar-container">
+                    <div class="bar-ghost" id="p1-hp-ghost"></div>
+                    <div class="bar-fill p1-fill" id="p1-hp-bar"></div>
+                    <div class="shield-fill" id="p1-sh-bar" style="width: 0%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size:0.8rem;" id="p1-stats">0/0 HP</div>
+                <div id="p1-buffs" style="margin-top: 2px; text-align: left;"></div>
+            </div>
+
+            <div class="fighter-panel" id="p2-panel">
+                <span class="universe-badge dcc" id="p2-univ">DC</span>
+                <h4 style="margin: 2px 0; font-size: 1.2rem; color: var(--p2-color);" id="p2-title">P2 HERO</h4>
+                <div class="bar-container">
+                    <div class="bar-ghost" id="p2-hp-ghost"></div>
+                    <div class="bar-fill p2-fill" id="p2-hp-bar"></div>
+                    <div class="shield-fill" id="p2-sh-bar" style="width: 0%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size:0.8rem;" id="p2-stats">0/0 HP</div>
+                <div id="p2-buffs" style="margin-top: 2px; text-align: left;"></div>
+            </div>
+        </div>
+
+        <div class="battle-main-area">
+            <div style="display: flex; justify-content: center; gap: 8px;">
+                <button class="btn" id="atk-normal" onclick="pickAction('normal')">⚔️ Normal</button>
+                <button class="btn" id="atk-super" onclick="pickAction('super')">🔥 Süper</button>
+                <button class="btn" id="atk-heal" onclick="pickAction('heal')">🧪 İksir</button>
+            </div>
+
+            <div class="matrix-grid" id="battle-matrix">
+                <canvas id="fx-canvas"></canvas>
+                <div class="matrix-cell" onclick="bindCell(0)">1</div>
+                <div class="matrix-cell" onclick="bindCell(1)">2</div>
+                <div class="matrix-cell" onclick="bindCell(2)">3</div>
+                <div class="matrix-cell" onclick="bindCell(3)">4</div>
+                <div class="matrix-cell" onclick="bindCell(4)">5</div>
+                <div class="matrix-cell" onclick="bindCell(5)">6</div>
+                <div class="matrix-cell" onclick="bindCell(6)">7</div>
+                <div class="matrix-cell" onclick="bindCell(7)">8</div>
+                <div class="matrix-cell" onclick="bindCell(8)">9</div>
+            </div>
+
+            <div class="console-log" id="game-log"></div>
+        </div>
+    </div></div><script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if(type === 'click') {
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        } else if(type === 'hit') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.2); gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        } else if(type === 'crit') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.35); gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35); osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+        } else if(type === 'heal') {
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+        }
+    }
+
+    const ROSTER = [
+        {univ: "MARVEL", name: "Spider-Man", hp_max: 130, ATK: 26, DEF: 10, s_bonus: 14, desc: "Örümcek Hissiyatı: Can <%40 olduğunda defans kalıcı +12 artar."},
+        {univ: "MARVEL", name: "Iron Man", hp_max: 125, ATK: 28, DEF: 14, s_bonus: 18, desc: "Nano Kalkan: Her tur başında hasar emen +8 Kalkan kazanır."},
+        {univ: "MARVEL", name: "Wolverine", hp_max: 160, ATK: 25, DEF: 12, s_bonus: 15, desc: "X-Gen: Her tur başı otomatik +6 HP yeniler."},
+        {univ: "MARVEL", name: "Thanos", hp_max: 175, ATK: 32, DEF: 16, s_bonus: 24, desc: "Sonsuzluk Taşları: Her 4 turda bir rakibin canının %30'unu anında eritir."},
+        {univ: "MARVEL", name: "Scarlet Witch", hp_max: 120, ATK: 30, DEF: 10, s_bonus: 22, desc: "Kaos Büyüsü: Süper vuruşu çakışırsa rakibin tüm yeteneklerini 2 tur kilitler."},
+        {univ: "MARVEL", name: "Deadpool", hp_max: 140, ATK: 27, DEF: 11, s_bonus: 14, desc: "X-Force: Ölümcül hasar aldığında %50 şansla 1 HP ile hayatta kalır."},
+        {univ: "DC", name: "Batman", hp_max: 135, ATK: 26, DEF: 15, s_bonus: 16, desc: "Hazırlık Ustası: Süper yeteneği bekleme süresi (cooldown) istemez!"},
+        {univ: "DC", name: "Superman", hp_max: 180, ATK: 34, DEF: 18, s_bonus: 25, desc: "Çelik Adam: Gelen tüm saldırıların hasarını net 4 puan kırar."},
+        {univ: "DC", name: "The Flash", hp_max: 115, ATK: 27, DEF: 9, s_bonus: 18, desc: "Hız Kuvveti: İksir bastığı tur gelen tüm ataklardan otomatik sıyrılır."},
+        {univ: "DC", name: "Wonder Woman", hp_max: 145, ATK: 29, DEF: 14, s_bonus: 18, desc: "Adalet Kementi: Atakları rakibin zırhının/savunmasının %40'ını deler."},
+        {univ: "DC", name: "Joker", hp_max: 125, ATK: 28, DEF: 11, s_bonus: 20, desc: "Kaotik Şans: Kritik ihtimali %40'tır, ancak %5 ihtimalle kendine vurabilir."},
+        {univ: "DC", name: "Darkseid", hp_max: 170, ATK: 33, DEF: 17, s_bonus: 26, desc: "Omega Işını: Süper vuruşu kalkanları tamamen yok sayıp doğrudan cana işler."}
+    ];
+
+    let mode = 1, p1 = null, p2 = null, round = 1, activeTurn = 1;
+    let p1_input = { action: null, cell: null }, p2_input = { action: null, cell: null };
+    let p1_cd = [0,0,0], p2_cd = [0,0,0]; let thanos_stones = { p1: 0, p2: 0 };
+
+    const canvas = document.getElementById('fx-canvas'); const ctx = canvas.getContext('2d');
+    let particles = []; let lasers = []; let shockwaves = [];
+
+    function resizeCanvas() {
+        const grid = document.getElementById('battle-matrix');
+        if(grid) { canvas.width = grid.clientWidth; canvas.height = grid.clientHeight; }
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function createBurst(x, y, color, count=20) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x, y, vx: (Math.random() - 0.5) * 9, vy: (Math.random() - 0.5) * 9,
+                radius: Math.random() * 3.5 + 1.5, color: color, alpha: 1, decay: Math.random() * 0.03 + 0.02
+            });
+        }
+    }
+
+    function createLaserBeam(startX, startY, endX, endY, color) { lasers.push({ startX, startY, endX, endY, color, width: 7, alpha: 1 }); }
+    function createShockwave(x, y) { shockwaves.push({ x, y, radius: 10, maxRadius: 140, alpha: 1, speed: 5 }); }
+
+    function updateAndDrawFX() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        lasers.forEach((l, i) => {
+            ctx.save(); ctx.globalAlpha = l.alpha; ctx.strokeStyle = l.color; ctx.lineWidth = l.width; ctx.shadowBlur = 15; ctx.shadowColor = l.color;
+            ctx.beginPath(); ctx.moveTo(l.startX, l.startY); ctx.lineTo(l.endX, l.endY); ctx.stroke(); ctx.restore();
+            l.alpha -= 0.12; l.width *= 0.85; if(l.alpha <= 0) lasers.splice(i, 1);
+        });
+        shockwaves.forEach((s, i) => {
+            ctx.save(); ctx.globalAlpha = s.alpha; ctx.strokeStyle = '#eab308'; ctx.lineWidth = 3; ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            s.radius += s.speed; s.alpha = 1 - (s.radius / s.maxRadius); if(s.radius >= s.maxRadius) shockwaves.splice(i, 1);
+        });
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+            if (p.alpha <= 0) { particles.splice(i, 1); } 
+            else { ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        });
+        requestAnimationFrame(updateAndDrawFX);
+    }
+    requestAnimationFrame(updateAndDrawFX);
+
+    function getCellCenter(idx) {
+        const cells = document.querySelectorAll('.matrix-cell'); const cell = cells[idx];
+        return { x: cell.offsetLeft + cell.clientWidth / 2, y: cell.offsetTop + cell.clientHeight / 2 };
+    }
+
+    function viewScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('scr-pass').style.display = 'none'; document.getElementById('scr-end').style.display = 'none';
+        if (id === 'scr-pass') document.getElementById('scr-pass').style.display = 'flex';
+        else if (id === 'scr-end') document.getElementById('scr-end').style.display = 'flex';
+        else { const t = document.getElementById(id); if(t) t.classList.add('active'); }
+        if(id === 'scr-battle') setTimeout(resizeCanvas, 50);
+    }
+
+    function initMode(m) { playSound('click'); mode = m; p1 = null; p2 = null; renderSelectionGrid(); viewScreen('scr-select'); }
+
+    function renderSelectionGrid() {
+        const container = document.getElementById('selection-container'); container.innerHTML = '';
+        document.getElementById('select-banner').innerText = !p1 ? "Oyuncu 1: Kahraman Seçin" : "Oyuncu 2: Kahraman Seçin";
+        ROSTER.forEach((hero, index) => {
+            const card = document.createElement('div'); card.className = 'char-card';
+            card.innerHTML = `
+                <span class="universe-badge ${hero.univ === 'MARVEL' ? 'mvl' : 'dcc'}">${hero.univ}</span>
+                <h4 style="margin:4px 0; color:#fff;">${hero.name}</h4>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px;">HP: ${hero.hp_max} | ATK: ${hero.ATK} | DEF: ${hero.DEF}</div>
+                <div style="font-size:0.7rem; color:var(--accent); line-height:1.2;">${hero.desc}</div>
+            `;
+            card.onclick = () => selectHero(index); container.appendChild(card);
+        });
+    }
+
+    function selectHero(index) {
+        playSound('click');
+        if(!p1) {
+            p1 = JSON.parse(JSON.stringify(ROSTER[index]));
+            if(mode === 2) {
+                let aiIdx; do { aiIdx = Math.floor(Math.random() * ROSTER.length); } while(aiIdx === index);
+                p2 = JSON.parse(JSON.stringify(ROSTER[aiIdx])); startArena();
+            } else { renderSelectionGrid(); }
+        } else { p2 = JSON.parse(JSON.stringify(ROSTER[index])); startArena(); }
+    }
+
+    function startArena() {
+        p1.hp = p1.hp_max; p2.hp = p2.hp_max; p1.sh = 0; p2.sh = 0; p1_cd = [0,0,0]; p2_cd = [0,0,0]; round = 1; thanos_stones = { p1: 0, p2: 0 };
+        document.getElementById('p1-title').innerText = p1.name; document.getElementById('p2-title').innerText = p2.name;
+        document.getElementById('p1-univ').className = `universe-badge ${p1.univ === 'MARVEL' ? 'mvl' : 'dcc'}`; document.getElementById('p1-univ').innerText = p1.univ;
+        document.getElementById('p2-univ').className = `universe-badge ${p2.univ === 'MARVEL' ? 'mvl' : 'dcc'}`; document.getElementById('p2-univ').innerText = p2.univ;
+        document.getElementById('game-log').innerHTML = ''; viewScreen('scr-battle'); triggerRoundLoop();
+    }
+
+    function triggerRoundLoop() {
+        activeTurn = 1; p1_input = { action: null, cell: null }; p2_input = { action: null, cell: null };
+        if(p1.name === "Iron Man") p1.sh = Math.min(50, p1.sh + 8); if(p2.name === "Iron Man") p2.sh = Math.min(50, p2.sh + 8);
+        if(p1.name === "Wolverine") p1.hp = Math.min(p1.hp_max, p1.hp + 6); if(p2.name === "Wolverine") p2.hp = Math.min(p2.hp_max, p2.hp + 6);
+        thanos_stones.p1++; thanos_stones.p2++;
+        if(p1.name === "Thanos" && thanos_stones.p1 % 4 === 0) { let dmg = Math.floor(p2.hp * 0.3); p2.hp -= dmg; logRow('sys', `💎 THANOS SONSUZLUK ELDİVENİNİ ŞIKLATTI! ${p2.name} canının %30'unu kaybediyor.`); }
+        if(p2.name === "Thanos" && thanos_stones.p2 % 4 === 0) { let dmg = Math.floor(p1.hp * 0.3); p1.hp -= dmg; logRow('sys', `💎 THANOS SONSUZLUK ELDİVENİNİ ŞIKLATTI! ${p1.name} canının %30'unu kaybediyor.`); }
+        if(p1.name === "Spider-Man" && p1.hp < p1.hp_max * 0.4) p1.DEF = 22; if(p2.name === "Spider-Man" && p2.hp < p2.hp_max * 0.4) p2.DEF = 22;
+        wipeMatrixVisuals(); setupPlayerPhases(1);
+    }
+
+    function setupPlayerPhases(turn) {
+        activeTurn = turn; let cHero = turn === 1 ? p1 : p2;
+        document.getElementById('turn-indicator').innerText = `Sıra: [ ${cHero.name} ]`; adjustActionButtons(turn); updateAppHUD();
+    }
+
+    function adjustActionButtons(turn) {
+        const actions = ['normal', 'super', 'heal']; let cds = turn === 1 ? p1_cd : p2_cd; let hero = turn === 1 ? p1 : p2;
+        actions.forEach((act, i) => {
+            let b = document.getElementById(`atk-${act}`); b.style.borderColor = "rgba(255,255,255,0.1)";
+            if(hero.name === "Batman" && act === 'super') { b.disabled = false; b.innerText = "🔥 Süper"; return; }
+            if(cds[i] > 0) { b.disabled = true; b.innerText = `🔒 CD: ${cds[i]}`; }
+            else { b.disabled = false; b.innerText = act === 'normal' ? '⚔️ Normal' : (act === 'super' ? '🔥 Süper' : '🧪 İksir'); }
+        });
+    }
+
+    function pickAction(act) {
+        playSound('click'); if(activeTurn === 1) p1_input.action = act; else p2_input.action = act;
+        ['normal', 'super', 'heal'].forEach(a => document.getElementById(`atk-${a}`).style.borderColor = "rgba(255,255,255,0.1)");
+        document.getElementById(`atk-${act}`).style.borderColor = 'var(--accent)';
+    }
+
+    function bindCell(idx) {
+        let currentInput = activeTurn === 1 ? p1_input : p2_input;
+        if(!currentInput.action) { logRow('sys', `⚠️ Önce eylemini seçmelisin!`); return; }
+        currentInput.cell = idx;
+        if(activeTurn === 1) {
+            if(mode === 2) { runAiLogic(); processResolution(); } 
+            else { activeTurn = 2; document.getElementById('pass-player').innerText = `SIRA: ${p2.name}`; viewScreen('scr-pass'); }
+        } else { processResolution(); }
+    }
+
+    function revealTurn() { playSound('click'); viewScreen('scr-battle'); wipeMatrixVisuals(); setupPlayerPhases(activeTurn); }
+
+    function runAiLogic() {
+        let options = []; if (p2_cd[2] === 0 && p2.hp < p2.hp_max * 0.4) { options.push('heal'); } 
+        else { if(p2_cd[0] === 0) options.push('normal'); if(p2_cd[1] === 0 || p2.name === "Batman") options.push('super'); }
+        if(options.length === 0) options.push('normal');
+        p2_input.action = options[Math.floor(Math.random() * options.length)]; p2_input.cell = Math.floor(Math.random() * 9);
+    }
+
+    function attackCalculator(attacker, defender, act, isClashHalf = false) {
+        let defInput = defender === p1 ? p1_input : p2_input;
+        if(defender.name === "The Flash" && defInput.action === 'heal') return "DODGE";
+        if(attacker.name === "Joker" && Math.random() < 0.05) return "SELF_HURT";
+        let critChance = attacker.name === "Joker" ? 0.40 : 0.15; let isCrit = !isClashHalf && Math.random() < critChance;
+        let power = attacker.ATK + (act === 'super' ? attacker.s_bonus : 0); let currentDef = defender.DEF;
+        if(attacker.name === "Wonder Woman") currentDef = Math.floor(currentDef * 0.6);
+        let finalDmg = Math.max(6, power - currentDef);
+        if(isClashHalf) finalDmg = Math.max(4, Math.floor(finalDmg / 2)); else if(isCrit) finalDmg = Math.floor(finalDmg * 1.5);
+        if(defender.name === "Superman") finalDmg = Math.max(3, finalDmg - 4);
+        return { dmg: finalDmg, crit: isCrit };
+    }
+
+    function executeDamage(target, amt, ignoreShield = false) {
+        if(target.sh > 0 && !ignoreShield) {
+            if(amt <= target.sh) target.sh -= amt; else { let diff = amt - target.sh; target.sh = 0; target.hp -= diff; }
+        } else { target.hp -= amt; }
+        if(target.hp <= 0 && target.name === "Deadpool" && Math.random() < 0.50) { target.hp = 1; logRow('sys', `💀 DEADPOOL ÖLÜMÜ REDDETTİ! 1 HP.`); }
+    }
+
+    function processResolution() {
+        if(p1.name !== "Batman" || p1_input.action !== 'super') { let i = p1_input.action === 'normal' ? 0 : (p1_input.action === 'super' ? 1 : 2); p1_cd[i] = p1_input.action === 'normal' ? 1 : 3; }
+        if(p2.name !== "Batman" || p2_input.action !== 'super') { let i = p2_input.action === 'normal' ? 0 : (p2_input.action === 'super' ? 1 : 2); p2_cd[i] = p2_input.action === 'normal' ? 1 : 3; }
+
+        document.getElementById('game-log').innerHTML = ''; logRow('sys', `💥 KOZMİK ENERJİ RAPORU (ROUND ${round})`);
+        let cells = document.querySelectorAll('.matrix-cell'); wipeMatrixVisuals();
+
+        if(p1_input.cell === p2_input.cell) {
+            let act1 = p1_input.action; let act2 = p2_input.action; let center = getCellCenter(p1_input.cell);
+            cells[p1_input.cell].classList.add('cell-flash');
+
+            if(act1 === 'super' && act2 === 'normal') {
+                cells[p1_input.cell].innerHTML = `💥 SÜPER<br>EZDİ`; let res = attackCalculator(p1, p2, 'super', true);
+                executeDamage(p2, res.dmg, p1.name === "Darkseid"); logRow('clash', `🔥 ${p1.name} Süper ile ${p2.name}'ın atağını ezdi! (${res.dmg} Hasar)`);
+                createBurst(center.x, center.y, '#ff0055', 30); triggerKineticHit(2, false, 'heavy');
+            } 
+            else if(act2 === 'super' && act1 === 'normal') {
+                cells[p2_input.cell].innerHTML = `💥 SÜPER<br>EZDİ`; let res = attackCalculator(p2, p1, 'super', true);
+                executeDamage(p1, res.dmg, p2.name === "Darkseid"); logRow('clash', `🔥 ${p2.name} Süper ile ${p1.name}'ın atağını ezdi! (${res.dmg} Hasar)`);
+                createBurst(center.x, center.y, '#38bdf8', 30); triggerKineticHit(1, false, 'heavy');
+            } 
+            else {
+                cells[p1_input.cell].innerText = "🛡️ NÖTRAL"; logRow('clash', `🛡️ İki kahraman aynı karede çarpıştı! Hasarlar emildi.`);
+                createShockwave(center.x, center.y); createBurst(center.x, center.y, '#eab308', 20); playSound('hit');
+            }
+        } else {
+            let c1 = getCellCenter(p1_input.cell); cells[p1_input.cell].classList.add('cell-flash');
+            if(p1_input.action === 'heal') {
+                cells[p1_input.cell].innerHTML = `<span style="color:#22c55e">${p1.name}</span><br>🧪 İKSİR`;
+                let gain = Math.floor(p1.hp_max * 0.25); p1.hp = Math.min(p1.hp_max, p1.hp + gain);
+                logRow('p1', `🧪 ${p1.name} yenilendi: +${gain} HP.`); createBurst(c1.x, c1.y, '#22c55e', 12); playSound('heal');
+            } else {
+                cells[p1_input.cell].innerHTML = `<span style="color:var(--p1-color)">${p1.name}</span><br>${p1_input.action.toUpperCase()}`;
+                createLaserBeam(15, canvas.height/2, c1.x, c1.y, '#ff0055'); let res = attackCalculator(p1, p2, p1_input.action);
+                if(res === "DODGE") logRow('clash', `⚡ HIZ KUVVETİ! ${p2.name} sıyrıldı!`);
+                else if(res === "SELF_HURT") { executeDamage(p1, 15); logRow('p1', `🃏 Joker kendine 15 hasar verdi!`); triggerKineticHit(1, false, 'light'); }
+                else {
+                    executeDamage(p2, res.dmg, p1.name === "Darkseid" && p1_input.action === 'super');
+                    logRow('p1', `⚔️ ${p1.name} vurdu! ${p2.name} ${res.dmg} hasar aldı. ${res.crit?'⭐KRİTİK!':''}`);
+                    createBurst(c1.x, c1.y, '#ff0055', res.crit ? 35 : 15); triggerKineticHit(2, res.crit, res.crit ? 'heavy' : 'light');
+                }
+            }
+
+            let c2 = getCellCenter(p2_input.cell); cells[p2_input.cell].classList.add('cell-flash');
+            if(p2_input.action === 'heal') {
+                cells[p2_input.cell].innerHTML = `<span style="color:#22c55e">${p2.name}</span><br>🧪 İKSİR`;
+                let gain = Math.floor(p2.hp_max * 0.25); p2.hp = Math.min(p2.hp_max, p2.hp + gain);
+                logRow('p2', `🧪 ${p2.name} yenilendi: +${gain} HP.`); createBurst(c2.x, c2.y, '#22c55e', 12); playSound('heal');
+            } else {
+                cells[p2_input.cell].innerHTML = `<span style="color:var(--p2-color)">${p2.name}</span><br>${p2_input.action.toUpperCase()}`;
+                createLaserBeam(canvas.width - 15, canvas.height/2, c2.x, c2.y, '#38bdf8'); let res = attackCalculator(p2, p1, p2_input.action);
+                if(res === "DODGE") logRow('clash', `⚡ HIZ KUVVETİ! ${p1.name} sıyrıldı!`);
+                else if(res === "SELF_HURT") { executeDamage(p2, 15); logRow('p2', `🃏 Joker kendine 15 hasar verdi!`); triggerKineticHit(2, false, 'light'); }
+                else {
+                    executeDamage(p1, res.dmg, p2.name === "Darkseid" && p2_input.action === 'super');
+                    logRow('p2', `⚔️ ${p2.name} vurdu! ${p1.name} ${res.dmg} hasar aldı. ${res.crit?'⭐KRİTİK!':''}`);
+                    createBurst(c2.x, c2.y, '#38bdf8', res.crit ? 35 : 15); triggerKineticHit(1, res.crit, res.crit ? 'heavy' : 'light');
+                }
+            }
+        }
+
+        for(let i=0; i<3; i++) { if(p1_cd[i] > 0) p1_cd[i]--; if(p2_cd[i] > 0) p2_cd[i]--; } updateAppHUD();
+
+        setTimeout(() => {
+            if(p1.hp <= 0 || p2.hp <= 0) {
+                let endText = (p1.hp <= 0 && p2.hp <= 0) ? "💥 İki titan da yok oldu. BERABERE!" : `🏆 Kazanan: ${p1.hp > 0 ? p1.name : p2.name}`;
+                document.getElementById('end-winner-text').innerText = endText; viewScreen('scr-end'); return;
+            }
+            round++; triggerRoundLoop();
+        }, 4200);
+    }
+
+    function triggerKineticHit(targetPlayerNum, isCrit, intensity) {
+        playSound(isCrit ? 'crit' : 'hit'); const app = document.getElementById('app');
+        const shakeClass = intensity === 'heavy' ? 'shake-heavy' : 'shake-light';
+        app.classList.add(shakeClass); setTimeout(() => app.classList.remove(shakeClass), 300);
+
+        const panel = document.getElementById(`p${targetPlayerNum}-panel`);
+        const pulseClass = targetPlayerNum === 1 ? 'flash-hit-p1' : 'flash-hit-p2';
+        panel.classList.add(pulseClass); setTimeout(() => panel.classList.remove(pulseClass), 300);
+    }
+
+    function updateAppHUD() {
+        document.getElementById('battle-round').innerText = `ROUND ${round}`;
+        let p1Perc = Math.max(0, (p1.hp / p1.hp_max) * 100); let p2Perc = Math.max(0, (p2.hp / p2.hp_max) * 100);
+
+        document.getElementById('p1-hp-bar').style.width = p1Perc + '%';
+        document.getElementById('p2-hp-bar').style.width = p2Perc + '%';
+        setTimeout(() => {
+            const g1 = document.getElementById('p1-hp-ghost'); if(g1) g1.style.width = p1Perc + '%';
+            const g2 = document.getElementById('p2-hp-ghost'); if(g2) g2.style.width = p2Perc + '%';
+        }, 300);
+
+        document.getElementById('p1-sh-bar').style.width = Math.min(100, (p1.sh / p1.hp_max) * 100) + '%';
+        document.getElementById('p2-sh-bar').style.width = Math.min(100, (p2.sh / p2.hp_max) * 100) + '%';
+
+        document.getElementById('p1-stats').innerText = `${p1.hp}/${p1.hp_max} HP ${p1.sh>0?`(+${p1.sh} K)` : ''}`;
+        document.getElementById('p2-stats').innerText = `${p2.hp}/${p2.hp_max} HP ${p2.sh>0?`(+${p2.sh} K)` : ''}`;
+
+        let b1 = document.getElementById('p1-buffs'); b1.innerHTML = '';
+        if(p1.name === "Thanos") b1.innerHTML += `<span class="buff-badge">💎 Taş: ${thanos_stones.p1}/4</span>`;
+        if(p1.name === "Spider-Man" && p1.hp < p1.hp_max*0.4) b1.innerHTML += `<span class="buff-badge" style="background:#b91c1c;">🕷️ Hissiyat</span>`;
+        if(p1.sh > 0) b1.innerHTML += `<span class="buff-badge" style="background:#eab308; color:#000;">🛡️ Kalkan</span>`;
+
+        let b2 = document.getElementById('p2-buffs'); b2.innerHTML = '';
+        if(p2.name === "Thanos") b2.innerHTML += `<span class="buff-badge">💎 Taş: ${thanos_stones.p2}/4</span>`;
+        if(p2.name === "Spider-Man" && p2.hp < p2.hp_max*0.4) b2.innerHTML += `<span class="buff-badge" style="background:#b91c1c;">🕷️ Hissiyat</span>`;
+        if(p2.sh > 0) b2.innerHTML += `<span class="buff-badge" style="background:#eab308; color:#000;">🛡️ Kalkan</span>`;
+    }
+
+    function logRow(type, msg) {
+        const lb = document.getElementById('game-log'); lb.innerHTML += `<div class="log-row log-${type}">${msg}</div>`;
+        lb.scrollTop = lb.scrollHeight;
+    }
+
+    function wipeMatrixVisuals() {
+        document.querySelectorAll('.matrix-cell').forEach((cell, i) => { cell.innerText = i + 1; cell.className = 'matrix-cell'; });
+    }</script></body></html>
